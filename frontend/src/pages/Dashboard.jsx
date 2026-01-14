@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Map as MapIcon, FileText, Mail, Search, Bell, Plus, Users, AlertTriangle, FileCheck, IndianRupee, Activity, Calendar } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom'; // Fixed: Added Link import
+import { LayoutDashboard, Map as MapIcon, FileText, Mail, Search, Bell, Plus, Users, AlertTriangle, FileCheck, IndianRupee, Activity, Calendar, FileSearch } from 'lucide-react';
 import MapView from '../components/MapView';
 
 // Internal Components
@@ -48,7 +48,6 @@ const Dashboard = () => {
         // Mock API Call
         const fetchReports = async () => {
             setIsLoading(true);
-            // await axios.get('/api/reports'); 
 
             // Simulating network delay
             setTimeout(() => {
