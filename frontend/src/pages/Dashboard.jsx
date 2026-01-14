@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Map as MapIcon, FileText, Mail, Search, Bell, Plus, Users, AlertTriangle, FileCheck, IndianRupee, Activity, Calendar } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom'; // Fixed: Added Link import
+import { LayoutDashboard, Map as MapIcon, FileText, Mail, Search, Bell, Plus, Users, AlertTriangle, FileCheck, IndianRupee, Activity, Calendar, FileSearch } from 'lucide-react';
 import MapView from '../components/MapView';
 
 // Internal Components
@@ -48,7 +48,6 @@ const Dashboard = () => {
         // Mock API Call
         const fetchReports = async () => {
             setIsLoading(true);
-            // await axios.get('/api/reports'); 
 
             // Simulating network delay
             setTimeout(() => {
@@ -77,22 +76,31 @@ const Dashboard = () => {
                 </div>
 
                 <nav className="flex-1 p-4 space-y-2">
-                    <a href="#" className="flex items-center gap-3 px-4 py-3 bg-blue-600 rounded-lg text-white shadow-lg shadow-blue-900/20">
+                    <Link to="/" className="flex items-center gap-3 px-4 py-3 bg-blue-600 rounded-lg text-white shadow-lg shadow-blue-900/20">
                         <LayoutDashboard size={20} />
                         <span className="font-medium">Overview</span>
-                    </a>
-                    <a href="#" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+                    </Link>
+
+                    <Link to="#" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
                         <MapIcon size={20} />
                         <span className="font-medium">Map View</span>
-                    </a>
-                    <a href="#" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+                    </Link>
+
+                    <Link to="/report" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
                         <FileText size={20} />
                         <span className="font-medium">Reports</span>
-                    </a>
-                    <a href="#" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+                    </Link>
+
+                    {/* Fixed: Added Doc Intelligence Link */}
+                    <Link to="/analysis" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+                        <FileSearch size={20} />
+                        <span className="font-medium">Doc Intelligence</span>
+                    </Link>
+
+                    <Link to="#" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
                         <Mail size={20} />
                         <span className="font-medium">RTI Letters</span>
-                    </a>
+                    </Link>
                 </nav>
 
                 <div className="p-4 border-t border-slate-800">
