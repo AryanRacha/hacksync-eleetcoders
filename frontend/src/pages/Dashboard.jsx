@@ -68,183 +68,148 @@ const Dashboard = () => {
     }, []);
 
     return (
-        <div className="flex h-screen bg-slate-50 font-sans">
-            {/* Sidebar */}
-            <aside className="w-64 bg-slate-900 text-white hidden md:flex flex-col">
-                <div className="p-6 border-b border-slate-800">
-                    <h1 className="text-xl font-bold tracking-wider text-blue-400">INTEGRITY</h1>
-                    <p className="text-xs text-slate-400 mt-1">Public Oversight Platform</p>
-                </div>
-
-                <nav className="flex-1 p-4 space-y-2">
-                    <a href="#" className="flex items-center gap-3 px-4 py-3 bg-blue-600 rounded-lg text-white shadow-lg shadow-blue-900/20">
-                        <LayoutDashboard size={20} />
-                        <span className="font-medium">Overview</span>
-                    </a>
-                    <a href="#" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
-                        <MapIcon size={20} />
-                        <span className="font-medium">Map View</span>
-                    </a>
-                    <a href="#" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
-                        <FileText size={20} />
-                        <span className="font-medium">Reports</span>
-                    </a>
-                    <a href="#" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
-                        <Mail size={20} />
-                        <span className="font-medium">RTI Letters</span>
-                    </a>
-                </nav>
-
-                <div className="p-4 border-t border-slate-800">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500"></div>
-                        <div>
-                            <p className="text-sm font-medium">John Doe</p>
-                            <p className="text-xs text-slate-400">Citizen Monitor</p>
-                        </div>
+        <div className="flex flex-col h-full overflow-hidden">
+            {/* Header */}
+            <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-10">
+                <div className="flex items-center gap-4 flex-1 max-w-xl">
+                    <div className="relative w-full">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                        <input
+                            type="text"
+                            placeholder="Search projects, locations, or Reference IDs..."
+                            className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        />
                     </div>
                 </div>
-            </aside>
 
-            {/* Main Content */}
-            <main className="flex-1 flex flex-col overflow-hidden">
-                {/* Header */}
-                <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-10">
-                    <div className="flex items-center gap-4 flex-1 max-w-xl">
-                        <div className="relative w-full">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                            <input
-                                type="text"
-                                placeholder="Search projects, locations, or Reference IDs..."
-                                className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                            />
+                <div className="flex items-center gap-4">
+                    <button className="relative p-2 text-slate-500 hover:bg-slate-50 rounded-full transition-colors">
+                        <Bell className="w-5 h-5" />
+                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                    </button>
+                    <button
+                        onClick={() => navigate('/submit')}
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Add Report
+                    </button>
+                </div>
+            </header>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+
+                {/* Top Row: Stats (Citizen Focused) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <StatCard title="My Reports Submitted" value="12" icon={FileText} color="bg-blue-500" />
+                    <StatCard title="Reports Resolved" value="5" icon={FileCheck} color="bg-green-500" />
+                    <StatCard title="Under AI Audit" value="3" icon={Activity} color="bg-purple-500" />
+                    <StatCard title="Active Corruption Alerts" value="1" icon={AlertTriangle} color="bg-red-500" />
+                </div>
+
+                {/* Middle Row: Map and Filters */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[500px]">
+                    <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                        <h2 className="font-semibold text-slate-800">Geographic Distribution</h2>
+                        <div className="flex gap-2">
+                            {['All', 'Roads', 'Sanitation', 'Education'].map(cat => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setActiveCategory(cat)}
+                                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${activeCategory === cat
+                                        ? 'bg-slate-900 text-white'
+                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                        }`}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
                         </div>
                     </div>
-
-                    <div className="flex items-center gap-4">
-                        <button className="relative p-2 text-slate-500 hover:bg-slate-50 rounded-full transition-colors">
-                            <Bell className="w-5 h-5" />
-                            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-                        </button>
-                        <button
-                            onClick={() => navigate('/report')}
-                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Add Report
-                        </button>
-                    </div>
-                </header>
-
-                {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
-
-                    {/* Top Row: Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <StatCard title="Total Projects" value="1,248" icon={Activity} color="bg-blue-500" />
-                        <StatCard title="Active Discrepancies" value="86" icon={AlertTriangle} color="bg-red-500" />
-                        <StatCard title="Citizen Reports" value="342" icon={Users} color="bg-purple-500" />
-                        <StatCard title="Funds at Risk" value="₹42.5Cr" icon={IndianRupee} color="bg-amber-500" />
-                    </div>
-
-                    {/* Middle Row: Map and Filters */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[500px]">
-                        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                            <h2 className="font-semibold text-slate-800">Geographic Distribution</h2>
-                            <div className="flex gap-2">
-                                {['All', 'Roads', 'Sanitation', 'Education'].map(cat => (
-                                    <button
-                                        key={cat}
-                                        onClick={() => setActiveCategory(cat)}
-                                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${activeCategory === cat
-                                            ? 'bg-slate-900 text-white'
-                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                            }`}
-                                    >
-                                        {cat}
-                                    </button>
-                                ))}
+                    <div className="flex-1 relative bg-slate-50">
+                        {isLoading ? (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                             </div>
-                        </div>
-                        <div className="flex-1 relative bg-slate-50">
-                            {isLoading ? (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                                </div>
-                            ) : (
-                                <MapView reports={reports} />
-                            )}
-                        </div>
+                        ) : (
+                            <MapView reports={reports} />
+                        )}
                     </div>
-
-                    {/* Bottom Row: Recent Reports Table */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-                        <div className="p-6 border-b border-slate-100">
-                            <h2 className="font-semibold text-slate-800">Recent Reports</h2>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
-                                    <tr>
-                                        <th className="px-6 py-4">Infrastructure Type</th>
-                                        <th className="px-6 py-4">Date</th>
-                                        <th className="px-6 py-4">Risk Level</th>
-                                        <th className="px-6 py-4">Status</th>
-                                        <th className="px-6 py-4 text-right">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {isLoading ? (
-                                        [1, 2, 3].map(i => (
-                                            <tr key={i}>
-                                                <td className="px-6 py-4"><div className="h-4 w-32 bg-slate-100 rounded animate-pulse"></div></td>
-                                                <td className="px-6 py-4"><div className="h-4 w-24 bg-slate-100 rounded animate-pulse"></div></td>
-                                                <td className="px-6 py-4"><div className="h-4 w-16 bg-slate-100 rounded animate-pulse"></div></td>
-                                                <td className="px-6 py-4"><div className="h-4 w-20 bg-slate-100 rounded animate-pulse"></div></td>
-                                                <td className="px-6 py-4"></td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        reports.map((report) => (
-                                            <tr key={report.id} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                                                            <FileCheck size={16} />
-                                                        </div>
-                                                        <span className="font-medium text-slate-700">{report.type}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-sm text-slate-500">
-                                                    <div className="flex items-center gap-2">
-                                                        <Calendar size={14} />
-                                                        {report.date}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`text-xs font-bold px-2 py-1 rounded border ${report.riskLevel === 'High' ? 'bg-red-50 text-red-600 border-red-100' :
-                                                        report.riskLevel === 'Medium' ? 'bg-orange-50 text-orange-600 border-orange-100' :
-                                                            'bg-green-50 text-green-600 border-green-100'
-                                                        }`}>
-                                                        {report.riskLevel} Risk
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <StatusBadge status={report.status} riskLevel={report.riskLevel} />
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">View Details</button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
                 </div>
-            </main>
+
+                {/* Bottom Row: Recent Reports Table */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+                    <div className="p-6 border-b border-slate-100">
+                        <h2 className="font-semibold text-slate-800">Recent Reports</h2>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+                                <tr>
+                                    <th className="px-6 py-4">Infrastructure Type</th>
+                                    <th className="px-6 py-4">Date</th>
+                                    <th className="px-6 py-4">Risk Level</th>
+                                    <th className="px-6 py-4">Status</th>
+                                    <th className="px-6 py-4 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {isLoading ? (
+                                    [1, 2, 3].map(i => (
+                                        <tr key={i}>
+                                            <td className="px-6 py-4"><div className="h-4 w-32 bg-slate-100 rounded animate-pulse"></div></td>
+                                            <td className="px-6 py-4"><div className="h-4 w-24 bg-slate-100 rounded animate-pulse"></div></td>
+                                            <td className="px-6 py-4"><div className="h-4 w-16 bg-slate-100 rounded animate-pulse"></div></td>
+                                            <td className="px-6 py-4"><div className="h-4 w-20 bg-slate-100 rounded animate-pulse"></div></td>
+                                            <td className="px-6 py-4"></td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    reports.map((report) => (
+                                        <tr key={report.id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                                                        <FileCheck size={16} />
+                                                    </div>
+                                                    <span className="font-medium text-slate-700">{report.type}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-slate-500">
+                                                <div className="flex items-center gap-2">
+                                                    <Calendar size={14} />
+                                                    {report.date}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`text-xs font-bold px-2 py-1 rounded border ${report.riskLevel === 'High' ? 'bg-red-50 text-red-600 border-red-100' :
+                                                    report.riskLevel === 'Medium' ? 'bg-orange-50 text-orange-600 border-orange-100' :
+                                                        'bg-green-50 text-green-600 border-green-100'
+                                                    }`}>
+                                                    {report.riskLevel} Risk
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <StatusBadge status={report.status} riskLevel={report.riskLevel} />
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <button
+                                                    onClick={() => navigate(`/audit/RPT-2023-${report.id}`)}
+                                                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                                >
+                                                    View Details
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
         </div>
     );
 };
