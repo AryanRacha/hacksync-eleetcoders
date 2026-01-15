@@ -125,7 +125,10 @@ export const createIssue = async (req, res) => {
 export const getAllIssues = async (req, res) => {
   try {
     // Find all issues and sort them by creation date (newest first)
-    const issues = await Issue.find({}).sort({ createdAt: -1 });
+    const issues = await Issue.find({})
+      .populate("firstReportedBy", "name email")
+      .populate("assignedTo", "name")
+      .sort({ createdAt: -1 });
 
     res.status(200).json(issues);
   } catch (error) {

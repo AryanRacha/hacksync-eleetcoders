@@ -39,14 +39,9 @@ const Sidebar = () => {
                     <span className="font-medium">Submit Report</span>
                 </NavLink>
 
-                <NavLink to="/reports" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
+                <NavLink to="/report" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
                     <FileText size={20} />
                     <span className="font-medium">Reports</span>
-                </NavLink>
-
-                <NavLink to="/document-analysis" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
-                    <FileSearch size={20} />
-                    <span className="font-medium">Doc Intelligence</span>
                 </NavLink>
             </nav>
 

@@ -11,3 +11,7 @@ export const createIssue = async (formData) => {
 export const getUserReports = async () => {
     return await axiosInstance.get('/reports/user');
 };
+
+export const getAllIssues = async () => {
+    return await axiosInstance.get('/issues');
+};

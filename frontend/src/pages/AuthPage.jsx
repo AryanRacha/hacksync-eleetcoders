@@ -87,7 +87,7 @@ const AuthPage = () => {
             // "If user logs in as Citizen, store role: "user" and navigate to /dashboard."
             // It seems both go to dashboard, but maybe the content changes.
             if (user.role === 'admin') {
-                navigate('/'); // Assuming dashboard is at root
+                navigate('/admin');
             } else {
                 navigate('/');
             }
@@ -144,8 +144,8 @@ const AuthPage = () => {
                                 type="button"
                                 onClick={() => setFormData({ ...formData, role: 'user' })}
                                 className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${formData.role === 'user'
-                                        ? 'bg-white text-slate-900 shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-700'
+                                    ? 'bg-white text-slate-900 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700'
                                     }`}
                             >
                                 Citizen
@@ -154,8 +154,8 @@ const AuthPage = () => {
                                 type="button"
                                 onClick={() => setFormData({ ...formData, role: 'admin' })}
                                 className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${formData.role === 'admin'
-                                        ? 'bg-white text-slate-900 shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-700'
+                                    ? 'bg-white text-slate-900 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700'
                                     }`}
                             >
                                 Auditor (Admin)

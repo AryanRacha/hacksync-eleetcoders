@@ -1,8 +1,9 @@
 import express from "express";
 import protectRoute from "../middlewares/protectRoute.js";
-import protectAdmin from "../middlewares/protectAdmin.js"; 
+import protectAdmin from "../middlewares/protectAdmin.js";
 
 import {
+  getDashboardStats,
   getUserById,
   createDepartment,
   getAllDepartments,
@@ -12,9 +13,9 @@ import {
 
 const router = express.Router();
 
-// router.get("/stats", protectRoute, protectAdmin, getDashboardStats); iska doubt hai ayega kya krke ye route coz admin k liye nhi hoga ye
+router.get("/stats", protectRoute, protectAdmin, getDashboardStats);
 // router.get("/users", protectRoute, protectAdmin, getAllUsers); //niche mth likha to find users by filter
-router.get("/users/:id", protectRoute, protectAdmin, getUserById); 
+router.get("/users/:id", protectRoute, protectAdmin, getUserById);
 
 router.post("/departments", protectRoute, protectAdmin, createDepartment);
 router.get("/departments", protectRoute, protectAdmin, getAllDepartments);

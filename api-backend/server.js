@@ -17,6 +17,7 @@ import issueRouter from "./routes/issue.route.js";
 import adminRouter from "./routes/admin.route.js";
 import auditRouter from "./routes/audit.route.js";
 import geoRouter from "./routes/geo.route.js";
+import officialRecordRouter from "./routes/officialRecord.route.js";
 
 dotenv.config();
 const app = express();
@@ -70,6 +71,7 @@ app.use("/api/reports", reportRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/audit", auditRouter);
 app.use("/api/geo", geoRouter);
+app.use("/api/contracts", officialRecordRouter);
 
 // Fallback for unknown routes
 app.get("/*", (req, res) => {

@@ -1,21 +1,11 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-const protectAdmin = async (req, res, next) => {
-  try {
-    const isAdmin = role[req.user.role] === "admin";
-    if (isAdmin) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Forbidden - No Admin Access" });
-    }
-
+const protectAdmin = (req, res, next) => {
+  if (req.user && req.user.role === "admin") {
     next();
-  } catch (error) {
-    console.error("Error in protectAdmin middleware:", error.message);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error" });
+  } else {
+    return res.status(403).json({ success: false, message: "Forbidden - Admin Access Only" });
   }
 };
 
