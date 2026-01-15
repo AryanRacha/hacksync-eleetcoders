@@ -1,11 +1,9 @@
 import express from "express";
-import { performAudit, analyzeDocument } from "../controllers/audit.controller.js";
-import multer from "multer";
+import { getAuditStatus, runAudit } from "../controllers/audit.controller.js";
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
 
-router.post("/:issueId/verify", performAudit);
-router.post("/analyze", upload.single("document"), analyzeDocument);
+router.get("/:id", getAuditStatus);
+router.post("/:id/analyze", runAudit);
 
 export default router;

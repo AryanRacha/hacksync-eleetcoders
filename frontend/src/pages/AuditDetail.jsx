@@ -1,273 +1,360 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
-    LayoutDashboard, Map as MapIcon, FileText, Mail, Search, Bell, Plus,
-    ShieldAlert, CheckCircle2, AlertTriangle, FileCheck, ArrowLeft,
-    Terminal, Database, ScanLine, Gavel, FileSignature, ThumbsUp, Phone
+    ArrowLeft, Terminal, ShieldAlert, CheckCircle2,
+    Eye, Map as MapIcon, Play, Loader2, FileSignature, Phone,
+    Gavel, Building2, AlertTriangle, Send
 } from 'lucide-react';
 
 const AuditDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [isLoading, setIsLoading] = useState(true);
-    const [auditData, setAuditData] = useState(null);
 
+    // State Management
+    const [viewState, setViewState] = useState('checking'); // checking -> initial -> processing -> complete
+    const [logs, setLogs] = useState([]);
+    const [auditResult, setAuditResult] = useState(null);
+    const [isEscalated, setIsEscalated] = useState(false); // New state for escalation status
+    const logsEndRef = useRef(null);
+
+    // 1. ON LOAD: Check if Audit exists in DB
     useEffect(() => {
-        // Mock API Fetch based on ID
-        const fetchAuditData = () => {
-            setIsLoading(true);
-            // Simulate network delay and AI processing
-            setTimeout(() => {
-                setAuditData({
-                    id: id || "RPT-2025-001",
-                    date: "2023-10-25",
-                    riskLevel: "High",
-                    userEvidence: {
-                        image: "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&q=80&w=800",
-                        description: "The road is completely washed away after one rain. There is no tar left, only gravel.",
-                        coordinates: "18.5204° N, 73.8567° E",
-                        timestamp: "10:42 AM"
-                    },
-                    officialRecord: {
-                        projectName: "Muncipal Road Resurfacing - Zone 4",
-                        budget: "₹1,20,00,000",
-                        contractor: "Vardhan Infratech Pvt Ltd.",
-                        officialStatus: "Completed & Verified",
-                        completionDate: "Dec 2025",
-                        authority: "Public Works Department"
-                    },
-                    aiAnalysis: {
-                        steps: [
-                            { stage: "Data Retrieval", status: "Success", details: "Fetched Project GOV-123 from Central Database." },
-                            { stage: "Visual Validation", status: "Warning", details: "Detected 'major pothole' (92%) and 'loose gravel' (88%). No bitumen layer found." },
-                            { stage: "Cross-Check", status: "Conflict", details: "Official status is 'Completed' but visual evidence suggests 'Work Not Started' or 'Failed'." },
-                        ],
-                        verdict: "High Probability of Financial Discrepancy (98%)"
-                    }
-                });
-                setIsLoading(false);
-            }, 2000);
+        const checkAuditStatus = async () => {
+            try {
+                // Adjust port if your backend runs on 5000 or 3000
+                const response = await axios.get(`http://localhost:5000/api/audit/${id}`);
+                setAuditResult(response.data);
+                // Check if already escalated (in a real app, this would come from the backend response)
+                if (response.data.verdict === 'Critical' || response.data.verdict === 'High') {
+                     // For demo purposes, we don't persist escalation state in this mock,
+                     // but you would check response.data.isEscalated here.
+                }
+                setViewState('complete');
+            } catch (error) {
+                setViewState('initial'); // Not found -> Show Start Button
+            }
         };
-
-        fetchAuditData();
+        checkAuditStatus();
     }, [id]);
 
-    const RiskBadge = ({ level }) => {
-        const colors = {
-            High: "bg-red-50 text-red-700 border-red-200",
-            Medium: "bg-orange-50 text-orange-700 border-orange-200",
-            Low: "bg-green-50 text-green-700 border-green-200"
-        };
-        const Icons = {
-            High: ShieldAlert,
-            Medium: AlertTriangle,
-            Low: CheckCircle2
-        };
-        const Icon = Icons[level] || AlertTriangle;
+    // 2. START AGENT: Trigger Workflow
+    const handleStartAudit = async () => {
+        setViewState('processing');
 
-        return (
-            <div className={`px-4 py-2 rounded-full border flex items-center gap-2 ${colors[level] || colors.Medium}`}>
-                <Icon size={18} />
-                <span className="font-bold uppercase tracking-wide text-sm">{level} Risk Verdict</span>
-            </div>
-        );
+        const addLog = (msg, type) => {
+            setLogs(prev => [...prev, { time: new Date().toLocaleTimeString(), message: msg, type }]);
+        };
+
+        try {
+            // --- SIMULATED "THINKING" PROCESS ---
+            addLog("Initializing IntegrityAI Agent v2.4...", "system");
+            await new Promise(r => setTimeout(r, 800));
+
+            addLog(`📡 Connecting to Central Dept Database for ID: ${id}...`, "action");
+            await new Promise(r => setTimeout(r, 1200));
+            addLog("✔ Official Record Retrieved.", "success");
+
+            addLog("👁️ Engaging Computer Vision on Evidence...", "action");
+            await new Promise(r => setTimeout(r, 1500));
+            addLog("⚠ VISUAL ANALYSIS: Discrepancy Detected.", "warning");
+
+            addLog("⚖️ Generating Final Verdict...", "system");
+            await new Promise(r => setTimeout(r, 1000));
+
+            // --- REAL BACKEND CALL ---
+            const response = await axios.post(`http://localhost:5000/api/audit/${id}/analyze`);
+            setAuditResult(response.data);
+
+            addLog("✔ Audit Saved & Verified.", "success");
+            await new Promise(r => setTimeout(r, 600));
+
+            setViewState('complete');
+
+        } catch (error) {
+            console.error("Audit Error:", error);
+            setViewState('initial');
+            alert("Audit failed. Ensure Backend is running.");
+        }
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-full bg-slate-50 flex-col gap-4">
-                <div className="relative">
-                    <div className="w-16 h-16 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <ScanLine className="text-blue-600 animate-pulse" size={24} />
-                    </div>
-                </div>
-                <h2 className="text-xl font-bold text-slate-700 animate-pulse">Running Autonomous Audit...</h2>
-                <p className="text-slate-500">Cross-referencing satellite data with official records.</p>
-            </div>
-        );
-    }
+    // 3. HANDLE ESCALATION
+    const handleEscalate = async () => {
+        if (!auditResult) return;
+
+        // In a real app, you would make a POST request here:
+        // await axios.post(`http://localhost:5000/api/audit/${id}/escalate`);
+
+        // Simulate API call
+        const confirm = window.confirm("Are you sure you want to escalate this case to the Vigilance Department?");
+        if (confirm) {
+            setIsEscalated(true);
+            alert(`Case #${id} has been escalated to the Vigilance Department. Priority: URGENT.`);
+        }
+    };
+
+    // Auto-scroll logs
+    useEffect(() => { logsEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [logs]);
 
     return (
-        <div className="flex flex-col h-full overflow-hidden">
+        <div className="flex flex-col h-full bg-slate-50 relative overflow-hidden">
             {/* Header */}
-            <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-10 flex-shrink-0">
+            <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-20">
                 <div className="flex items-center gap-4">
                     <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition-colors">
                         <ArrowLeft size={20} />
                     </button>
-                    <h1 className="text-lg font-semibold text-slate-800">Audit Details</h1>
-                </div>
-                <div className="flex items-center gap-4">
-                    <button className="relative p-2 text-slate-500 hover:bg-slate-50 rounded-full transition-colors">
-                        <Bell className="w-5 h-5" />
-                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-                    </button>
-                    <button
-                        onClick={() => navigate('/submit')}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Add Report
-                    </button>
+                    <h1 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        Autonomous Audit
+                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">v2.4</span>
+                    </h1>
                 </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto p-8">
-                <div className="max-w-6xl mx-auto space-y-8">
+            <div className="flex-1 overflow-y-auto p-6 md:p-8 z-10">
+                <div className="max-w-6xl mx-auto space-y-6">
 
-                    {/* Summary Header */}
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                        <div>
-                            <div className="flex items-center gap-3 text-slate-500 text-sm mb-1">
-                                <span className="font-mono">ID: {auditData.id}</span>
-                                <span>•</span>
-                                <span>{auditData.date}</span>
-                            </div>
-                            <h1 className="text-2xl font-bold text-slate-900">Infrastructure Discrepancy Report</h1>
+                    {/* STATE 1: LOADING */}
+                    {viewState === 'checking' && (
+                        <div className="flex flex-col items-center justify-center h-96">
+                            <Loader2 className="animate-spin text-blue-600 mb-4" size={40} />
+                            <p className="text-slate-500 font-medium">Checking Audit History...</p>
                         </div>
-                        <RiskBadge level={auditData.riskLevel} />
-                    </div>
+                    )}
 
-                    {/* Comparison Wall */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        {/* Left: Citizen Evidence */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                            <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
-                                <div className="p-1.5 bg-blue-100 text-blue-600 rounded-md">
-                                    <FileCheck size={18} />
-                                </div>
-                                <h3 className="font-semibold text-slate-800">Citizen Evidence</h3>
+                    {/* STATE 2: INITIAL (Start Button) */}
+                    {viewState === 'initial' && (
+                        <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl shadow-sm border border-slate-200 animate-in fade-in zoom-in-95 duration-500">
+                            <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6">
+                                <ShieldAlert size={48} className="text-blue-600" />
                             </div>
-                            <div className="p-6 space-y-6 flex-1">
-                                <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-sm group">
-                                    <img src={auditData.userEvidence.image} alt="Evidence" className="w-full h-64 object-cover" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
-                                        <div className="text-white text-xs font-mono">
-                                            <p className="flex items-center gap-1"><MapIcon size={12} /> {auditData.userEvidence.coordinates}</p>
-                                            <p>{auditData.userEvidence.timestamp}</p>
+                            <h2 className="text-3xl font-bold text-slate-800 mb-3">Ready to Audit</h2>
+                            <p className="text-slate-500 mb-8 max-w-lg text-lg">
+                                This report <strong>({id})</strong> needs verification. Run the AI Agent to cross-reference citizen evidence with official government records.
+                            </p>
+                            <button
+                                onClick={handleStartAudit}
+                                className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg shadow-xl shadow-blue-200 transition-all transform hover:scale-105 flex items-center gap-3"
+                            >
+                                <Play size={24} fill="currentColor" /> Start Agentic Audit
+                            </button>
+                        </div>
+                    )}
+
+                    {/* STATE 3: PROCESSING (Terminal) */}
+                    {viewState === 'processing' && (
+                        <div className="bg-[#0f172a] rounded-xl overflow-hidden shadow-2xl border border-slate-700">
+                            <div className="bg-[#1e293b] px-4 py-3 flex items-center gap-3 border-b border-slate-700">
+                                <Terminal size={16} className="text-slate-400" />
+                                <span className="text-sm font-mono text-slate-300">integrity_core_agent.exe</span>
+                                <div className="ml-auto flex gap-1.5">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
+                                    <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+                                </div>
+                            </div>
+                            <div className="p-6 h-80 overflow-y-auto font-mono text-sm space-y-2 custom-scrollbar">
+                                {logs.map((log, i) => (
+                                    <div key={i} className="flex gap-4 animate-in fade-in slide-in-from-left-2 duration-200">
+                                        <span className="text-slate-600 shrink-0 select-none">{log.time}</span>
+                                        <span className={`${
+                                            log.type === 'error' ? 'text-red-400 font-bold' :
+                                            log.type === 'success' ? 'text-emerald-400' :
+                                            log.type === 'warning' ? 'text-amber-400' :
+                                            log.type === 'action' ? 'text-blue-400' :
+                                            log.type === 'system' ? 'text-purple-400 font-bold' : 'text-slate-300'
+                                        }`}>
+                                            {log.type === 'action' && '> '} {log.message}
+                                        </span>
+                                    </div>
+                                ))}
+                                <div ref={logsEndRef} />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* STATE 4: COMPLETE (Results Dashboard) */}
+                    {viewState === 'complete' && auditResult && (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+
+                            {/* LEFT COLUMN: Verdict & Details */}
+                            <div className="lg:col-span-2 space-y-8">
+                                {/* Verdict Banner */}
+                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-start justify-between gap-6 relative overflow-hidden">
+                                    {isEscalated && (
+                                        <div className="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-bl-xl shadow-md flex items-center gap-1 animate-in slide-in-from-top-2">
+                                            <AlertTriangle size={12} fill="currentColor" /> URGENT PRIORITY
+                                        </div>
+                                    )}
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <Gavel size={24} className="text-slate-400" />
+                                            <h2 className="text-2xl font-bold text-slate-900">
+                                                Verdict: <span className={auditResult.verdict === 'Critical' || auditResult.verdict === 'High' ? "text-red-600" : "text-green-600"}>
+                                                    {auditResult.verdict} Risk
+                                                </span>
+                                            </h2>
+                                        </div>
+                                        <p className="text-slate-600 text-lg leading-relaxed">{auditResult.reasoning}</p>
+                                    </div>
+                                    <div className="text-center bg-slate-50 px-6 py-4 rounded-xl border border-slate-100 min-w-[120px]">
+                                        <div className="text-4xl font-bold text-slate-900">{auditResult.confidence}%</div>
+                                        <div className="text-xs text-slate-500 uppercase font-bold tracking-wider mt-1">Confidence</div>
+                                    </div>
+                                </div>
+
+                                {/* Comparison View */}
+                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                    <div className="p-5 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
+                                        <Eye size={20} className="text-blue-600" />
+                                        <h3 className="font-semibold text-slate-800 text-lg">Evidence vs. Official Reality</h3>
+                                    </div>
+                                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+
+                                        {/* Official Record */}
+                                        <div className="p-8 space-y-6">
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <Building2 size={18} className="text-slate-400" />
+                                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Official Govt Record</span>
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <span className="text-sm text-slate-500">Project Name</span>
+                                                    <p className="font-medium text-slate-900">{auditResult.officialRecord.projectName}</p>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <span className="text-sm text-slate-500">Status</span>
+                                                        <div className="font-bold text-green-600 flex items-center gap-2 mt-1">
+                                                            <CheckCircle2 size={16}/> {auditResult.officialRecord.status}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-sm text-slate-500">Budget</span>
+                                                        <p className="font-mono font-semibold text-slate-700">{auditResult.officialRecord.budget}</p>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <span className="text-sm text-slate-500">Contractor</span>
+                                                    <p className="font-medium text-slate-900">{auditResult.officialRecord.contractor}</p>
+                                                </div>
+                                                <div>
+                                                    <span className="text-sm text-slate-500">Department</span>
+                                                    <span className="inline-block mt-1 px-2 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded">
+                                                        {auditResult.officialRecord.departmentName || "Public Works Dept"}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* User Evidence */}
+                                        <div className="p-8 bg-slate-50/30">
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <MapIcon size={18} className="text-slate-400" />
+                                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Citizen Evidence</span>
+                                            </div>
+
+                                            <div className="relative aspect-video rounded-xl overflow-hidden mb-4 shadow-sm border border-slate-200 group">
+                                                <img
+                                                    src={auditResult.evidence.image || "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&q=80&w=800"}
+                                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                                    alt="Evidence"
+                                                />
+                                                <div className="absolute top-2 right-2 bg-black/70 text-white text-[10px] px-2 py-1 rounded backdrop-blur-sm font-mono">
+                                                    Source: Verified User
+                                                </div>
+                                            </div>
+                                            <div className="bg-white p-4 rounded-lg border border-slate-200">
+                                                <p className="text-slate-700 text-sm leading-relaxed italic">
+                                                    "{auditResult.evidence.description}"
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div>
-                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">User Description</label>
-                                    <p className="text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                        "{auditData.userEvidence.description}"
+                            </div>
+
+                            {/* RIGHT COLUMN: Actions */}
+                            <div className="space-y-6">
+                                {/* Risk Card */}
+                                <div className={`rounded-2xl p-8 text-center border transition-all duration-500 ${
+                                    isEscalated ? 'bg-red-100 border-red-200 ring-2 ring-red-400' :
+                                    auditResult.verdict === 'Critical' || auditResult.verdict === 'High'
+                                    ? 'bg-red-50 border-red-100'
+                                    : 'bg-green-50 border-green-100'
+                                }`}>
+                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto ${
+                                        auditResult.verdict === 'Critical' || auditResult.verdict === 'High'
+                                        ? 'bg-red-100 text-red-600'
+                                        : 'bg-green-100 text-green-600'
+                                    }`}>
+                                        <ShieldAlert size={32} />
+                                    </div>
+                                    <h3 className={`text-xl font-bold ${
+                                        auditResult.verdict === 'Critical' || auditResult.verdict === 'High' ? 'text-red-900' : 'text-green-900'
+                                    }`}>
+                                        {auditResult.verdict} Risk Detected
+                                    </h3>
+                                    <p className={`text-sm mt-2 mb-6 ${
+                                        auditResult.verdict === 'Critical' || auditResult.verdict === 'High' ? 'text-red-700' : 'text-green-700'
+                                    }`}>
+                                        {auditResult.verdict === 'Critical' || auditResult.verdict === 'High'
+                                            ? "Flagged for immediate manual review due to high discrepancy probability."
+                                            : "No significant discrepancies found. Verification successful."}
                                     </p>
-                                </div>
-                            </div>
-                        </div>
 
-                        {/* Right: Official Record */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-blue-100 overflow-hidden flex flex-col relative">
-                            {/* Watermark */}
-                            <div className="absolute top-10 right-10 opacity-[0.03] pointer-events-none">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Emblem_of_India.svg/1200px-Emblem_of_India.svg.png" className="w-64" alt="Seal" />
-                            </div>
-
-                            <div className="p-4 border-b border-blue-50 bg-blue-50/50 flex items-center gap-2">
-                                <div className="p-1.5 bg-slate-800 text-white rounded-md">
-                                    <Database size={18} />
-                                </div>
-                                <h3 className="font-semibold text-slate-900">Official Government Record</h3>
-                            </div>
-                            <div className="p-8 space-y-6 relative z-0 flex-1">
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Project Name</label>
-                                    <p className="text-lg font-bold text-slate-800">{auditData.officialRecord.projectName}</p>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Budget</label>
-                                        <p className="text-xl font-mono font-semibold text-slate-800">{auditData.officialRecord.budget}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Authority</label>
-                                        <p className="font-medium text-slate-700">{auditData.officialRecord.authority}</p>
-                                    </div>
+                                    {(auditResult.verdict === 'Critical' || auditResult.verdict === 'High') ? (
+                                        <button
+                                            onClick={handleEscalate}
+                                            disabled={isEscalated}
+                                            className={`w-full py-3 text-white rounded-xl font-bold shadow-sm transition-all flex items-center justify-center gap-2 ${
+                                                isEscalated
+                                                ? 'bg-slate-400 cursor-not-allowed'
+                                                : 'bg-red-600 hover:bg-red-700 hover:shadow-md'
+                                            }`}
+                                        >
+                                            {isEscalated ? (
+                                                <>
+                                                    <CheckCircle2 size={18} /> Escalated to Vigilance
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Send size={18} /> Escalate Case
+                                                </>
+                                            )}
+                                        </button>
+                                    ) : (
+                                        <button className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold shadow-sm transition-colors">
+                                            Mark as Resolved
+                                        </button>
+                                    )}
                                 </div>
 
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Internal Status</label>
-                                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium border border-green-200">
-                                        <CheckCircle2 size={14} />
-                                        {auditData.officialRecord.officialStatus}
-                                    </div>
-                                    <div className="mt-2 text-xs text-slate-500">
-                                        Last Updated: {auditData.officialRecord.completionDate}
-                                    </div>
-                                </div>
+                                {/* Quick Actions */}
+                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-3">
+                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Recommended Actions</h3>
 
-                                <div className="pt-6 border-t border-slate-100/50">
-                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Contractor</label>
-                                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 flex items-center justify-between">
-                                        <span className="font-medium text-slate-700">{auditData.officialRecord.contractor}</span>
-                                        <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded">Lic: #C-9822</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* AI Reasoning Engine */}
-                    <div className="bg-slate-900 rounded-2xl overflow-hidden shadow-xl border border-slate-700">
-                        <div className="bg-slate-800 px-6 py-4 flex items-center justify-between border-b border-slate-700">
-                            <div className="flex items-center gap-3">
-                                <Terminal className="text-green-400" />
-                                <h3 className="font-mono text-green-400 font-bold tracking-wider">AI AGENT ANALYSIS_LOG</h3>
-                            </div>
-                            <div className="flex gap-2">
-                                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                            </div>
-                        </div>
-                        <div className="p-6 font-mono text-sm space-y-4">
-                            {auditData.aiAnalysis.steps.map((step, idx) => (
-                                <div key={idx} className="flex gap-4 items-start group">
-                                    <span className="text-slate-500 shrink-0">0{idx + 1}</span>
-                                    <div className="flex-1 space-y-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-blue-400 font-bold">[{step.stage}]</span>
-                                            <span className={`text-xs px-1.5 py-0.5 rounded ${step.status === 'Success' ? 'bg-green-900/30 text-green-400' :
-                                                    step.status === 'Conflict' ? 'bg-red-900/30 text-red-400' : 'bg-yellow-900/30 text-yellow-400'
-                                                }`}>
-                                                {step.status}
-                                            </span>
+                                    <button className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-200 text-left group">
+                                        <div className="p-2.5 bg-blue-100 text-blue-600 rounded-lg group-hover:bg-blue-200 transition-colors"><FileSignature size={18} /></div>
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-800">Draft RTI Application</p>
+                                            <p className="text-xs text-slate-500">Auto-fill with audit data</p>
                                         </div>
-                                        <p className="text-slate-300 ml-2 border-l-2 border-slate-700 pl-3 group-hover:border-slate-500 transition-colors">
-                                            {step.details}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
+                                    </button>
 
-                            <div className="mt-8 pt-6 border-t border-slate-700">
-                                <div className="flex items-center gap-3 text-red-400 animate-pulse">
-                                    <Gavel size={20} />
-                                    <span className="font-bold text-lg">FINAL VERDICT: {auditData.aiAnalysis.verdict}</span>
+                                    <button className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-200 text-left group">
+                                        <div className="p-2.5 bg-green-100 text-green-600 rounded-lg group-hover:bg-green-200 transition-colors"><Phone size={18} /></div>
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-800">Contact Contractor</p>
+                                            <p className="text-xs text-slate-500">Request formal details</p>
+                                        </div>
+                                    </button>
                                 </div>
                             </div>
+
                         </div>
-                    </div>
-
-                    {/* Action Footer */}
-                    <div className="flex flex-col sm:flex-row gap-4 justify-end pt-4 pb-12">
-                        <button className="flex-1 sm:flex-none px-6 py-3 bg-white border border-slate-300 text-slate-700 rounded-xl font-medium hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm">
-                            <Phone size={18} />
-                            Contact Authority
-                        </button>
-                        <button className="flex-1 sm:flex-none px-6 py-3 bg-white border border-slate-300 text-slate-700 rounded-xl font-medium hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm">
-                            <ThumbsUp size={18} />
-                            Upvote for Visibility
-                        </button>
-                        <button className="flex-1 sm:flex-none px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2">
-                            <FileSignature size={18} />
-                            Generate RTI Application
-                        </button>
-                    </div>
-
+                    )}
                 </div>
             </div>
         </div>
