@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // Fixed: Added Link import
+import { useNavigate, Link } from 'react-router-dom';
 import { LayoutDashboard, Map as MapIcon, FileText, Mail, Search, Bell, Plus, Users, AlertTriangle, FileCheck, IndianRupee, Activity, Calendar, FileSearch } from 'lucide-react';
 import MapView from '../components/MapView';
+import { getUserReports } from '../api/reportApi';
 
 // Internal Components
 const StatCard = ({ title, value, icon: Icon, color }) => (
@@ -16,23 +17,16 @@ const StatCard = ({ title, value, icon: Icon, color }) => (
     </div>
 );
 
-const StatusBadge = ({ status, riskLevel }) => {
+const StatusBadge = ({ status }) => {
     let colorClass = 'bg-gray-100 text-gray-800';
 
-    // Status coloring
     if (status === 'Verified') colorClass = 'bg-green-100 text-green-800';
     if (status === 'Pending') colorClass = 'bg-yellow-100 text-yellow-800';
     if (status === 'Rejected') colorClass = 'bg-red-100 text-red-800';
-
-    // Risk level indicators (dot)
-    let riskColor = 'bg-gray-400';
-    if (riskLevel === 'High') riskColor = 'bg-red-500';
-    if (riskLevel === 'Medium') riskColor = 'bg-yellow-500';
-    if (riskLevel === 'Low') riskColor = 'bg-green-500';
+    if (status === 'Resolved') colorClass = 'bg-blue-100 text-blue-800';
 
     return (
         <span className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-2 w-fit ${colorClass}`}>
-            <span className={`w-2 h-2 rounded-full ${riskColor}`}></span>
             {status}
         </span>
     );
@@ -44,29 +38,32 @@ const Dashboard = () => {
     const [activeCategory, setActiveCategory] = useState('All');
     const navigate = useNavigate();
 
-    const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || { role: 'guest' }); // Basic guest default
+    const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || { role: 'guest' });
 
     useEffect(() => {
-        // Mock API Call
         const fetchReports = async () => {
-            setIsLoading(true);
-
-            // Simulating network delay
-            setTimeout(() => {
-                const mockData = [
-                    { id: 1, type: 'Road Construction', location: [18.5204, 73.8567], status: 'Pending', riskLevel: 'High', date: '2023-10-25' },
-                    { id: 2, type: 'Sanitation', location: [19.0760, 72.8777], status: 'Verified', riskLevel: 'Low', date: '2023-10-24' },
-                    { id: 3, type: 'Street Light', location: [28.7041, 77.1025], status: 'Rejected', riskLevel: 'Medium', date: '2023-10-23' },
-                    { id: 4, type: 'Water Supply', location: [12.9716, 77.5946], status: 'Pending', riskLevel: 'High', date: '2023-10-22' },
-                    { id: 5, type: 'Bridge Maintenance', location: [13.0827, 80.2707], status: 'Verified', riskLevel: 'Low', date: '2023-10-21' },
-                ];
-                setReports(mockData);
+            try {
+                setIsLoading(true);
+                const response = await getUserReports();
+                console.log("Fetched reports:", response.data);
+                setReports(response.data || []);
+            } catch (error) {
+                console.error("Error fetching user reports:", error);
+            } finally {
                 setIsLoading(false);
-            }, 1500);
+            }
         };
 
         fetchReports();
     }, []);
+
+    // Calculate Stats
+    const totalReports = reports.length;
+    const resolvedReports = reports.filter(r => r.status === 'Resolved').length;
+    const auditPending = reports.filter(r => r.auditVerification?.status === 'Pending').length;
+    // Assuming 'Active Corruption Alerts' logic or just hardcode/placeholder if not specified in prompt details
+    // For now keeping existing hardcoded value or making it 0 if not calculated
+    const corruptionAlerts = 0;
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
@@ -100,16 +97,15 @@ const Dashboard = () => {
                 </div>
             </header>
 
-
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
                 {/* Top Row: Stats (Citizen Focused) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <StatCard title="My Reports Submitted" value="12" icon={FileText} color="bg-blue-500" />
-                    <StatCard title="Reports Resolved" value="5" icon={FileCheck} color="bg-green-500" />
-                    <StatCard title="Under AI Audit" value="3" icon={Activity} color="bg-purple-500" />
-                    <StatCard title="Active Corruption Alerts" value="1" icon={AlertTriangle} color="bg-red-500" />
+                    <StatCard title="My Reports Submitted" value={totalReports} icon={FileText} color="bg-blue-500" />
+                    <StatCard title="Reports Resolved" value={resolvedReports} icon={FileCheck} color="bg-green-500" />
+                    <StatCard title="Under AI Audit" value={auditPending} icon={Activity} color="bg-purple-500" />
+                    <StatCard title="Active Corruption Alerts" value={corruptionAlerts} icon={AlertTriangle} color="bg-red-500" />
                 </div>
 
                 {/* Middle Row: Map and Filters */}
@@ -151,9 +147,9 @@ const Dashboard = () => {
                         <table className="w-full text-left">
                             <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
                                 <tr>
-                                    <th className="px-6 py-4">Infrastructure Type</th>
-                                    <th className="px-6 py-4">Date</th>
-                                    <th className="px-6 py-4">Risk Level</th>
+                                    <th className="px-6 py-4">Title</th>
+                                    <th className="px-6 py-4">Category</th>
+                                    <th className="px-6 py-4">Date Submitted</th>
                                     <th className="px-6 py-4">Status</th>
                                     <th className="px-6 py-4 text-right">Action</th>
                                 </tr>
@@ -171,35 +167,27 @@ const Dashboard = () => {
                                     ))
                                 ) : (
                                     reports.map((report) => (
-                                        <tr key={report.id} className="hover:bg-slate-50 transition-colors">
+                                        <tr key={report._id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <span className="font-medium text-slate-700 block truncate max-w-xs">{report.title}</span>
+                                            </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                                                        <FileCheck size={16} />
-                                                    </div>
-                                                    <span className="font-medium text-slate-700">{report.type}</span>
+                                                    <span className="text-sm text-slate-600 capitalize">{report.category}</span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-sm text-slate-500">
                                                 <div className="flex items-center gap-2">
                                                     <Calendar size={14} />
-                                                    {report.date}
+                                                    {new Date(report.createdAt).toLocaleDateString()}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className={`text-xs font-bold px-2 py-1 rounded border ${report.riskLevel === 'High' ? 'bg-red-50 text-red-600 border-red-100' :
-                                                    report.riskLevel === 'Medium' ? 'bg-orange-50 text-orange-600 border-orange-100' :
-                                                        'bg-green-50 text-green-600 border-green-100'
-                                                    }`}>
-                                                    {report.riskLevel} Risk
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <StatusBadge status={report.status} riskLevel={report.riskLevel} />
+                                                <StatusBadge status={report.status} />
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <button
-                                                    onClick={() => navigate(`/audit/RPT-2023-${report.id}`)}
+                                                    onClick={() => navigate(`/audit/${report._id}`)}
                                                     className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                                                 >
                                                     View Details
@@ -210,6 +198,11 @@ const Dashboard = () => {
                                 )}
                             </tbody>
                         </table>
+                        {!isLoading && reports.length === 0 && (
+                            <div className="p-8 text-center text-slate-500 text-sm">
+                                No reports submitted yet.
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -217,5 +210,6 @@ const Dashboard = () => {
         </div>
     );
 };
+
 
 export default Dashboard;

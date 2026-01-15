@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, X, MapPin, Loader2, CheckCircle, Shield, AlertTriangle, Search, Bell, Plus, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { createIssue } from '../api/reportApi';
 
 const SubmitReport = () => {
     const navigate = useNavigate();
@@ -9,7 +9,6 @@ const SubmitReport = () => {
         title: '',
         category: '',
         description: '',
-        location: '',
     });
 
     const [images, setImages] = useState([]);
@@ -17,7 +16,37 @@ const SubmitReport = () => {
     const [location, setLocation] = useState({ lat: null, lng: null });
     const [timestamp, setTimestamp] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [showSuccess, setShowSuccess] = useState(false);
+
+    // Backend allowed categories
+    const categories = [
+        { label: 'Pothole', value: 'pothole' },
+        { label: 'Traffic', value: 'traffic' },
+        { label: 'Water Supply', value: 'water supply' },
+        { label: 'Garbage', value: 'garbage' },
+        { label: 'Streetlight', value: 'streetlight' },
+    ];
+
+    const captureMetadata = () => {
+        const now = Date.now();
+        setTimestamp(now);
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    setLocation({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    });
+                },
+                (error) => {
+                    console.error("Error getting location:", error);
+                    alert("Unable to fetch location. Please enable GPS.");
+                }
+            );
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -45,28 +74,19 @@ const SubmitReport = () => {
         setImagePreviews(prev => prev.filter((_, i) => i !== index));
     };
 
-    const captureMetadata = () => {
-        const now = Date.now();
-        setTimestamp(now);
-
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    setLocation({
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    });
-                },
-                (error) => {
-                    console.error("Error getting location:", error);
-                    // Optional: Handle location error (e.g., show a toast)
-                }
-            );
-        }
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (images.length === 0) {
+            alert("Please upload at least one image as evidence.");
+            return;
+        }
+
+        if (!location.lat || !location.lng) {
+            alert("Location is required. Please ensure GPS is enabled and try uploading an image again.");
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
@@ -74,34 +94,29 @@ const SubmitReport = () => {
             data.append('title', formData.title);
             data.append('category', formData.category);
             data.append('description', formData.description);
-            data.append('locationText', formData.location);
-            if (location.lat && location.lng) {
-                data.append('lat', location.lat);
-                data.append('lng', location.lng);
-            }
-            if (timestamp) {
-                data.append('timestamp', timestamp);
-            }
+            data.append('latitude', location.lat);
+            data.append('longitude', location.lng);
 
             images.forEach((image) => {
                 data.append('images', image);
             });
 
-            // Mock API call
-            // await axios.post('http://localhost:5000/api/reports', data, {
-            //   headers: { 'Content-Type': 'multipart/form-data' }
-            // });
+            const response = await createIssue(data);
 
-            // Simulate network delay
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            setShowSuccess(true);
-            setTimeout(() => {
+            if (response.status === 201) {
+                alert("Report submitted successfully!");
                 navigate('/');
-            }, 3000);
+            } else if (response.status === 200) {
+                alert("Report added to existing issue at this location.");
+                navigate('/');
+            } else {
+                alert("Report submitted.");
+                navigate('/');
+            }
 
         } catch (error) {
             console.error("Error submitting report:", error);
+            alert(error.response?.data?.message || "Failed to submit report. Please try again.");
         } finally {
             setIsSubmitting(false);
         }
@@ -127,6 +142,9 @@ const SubmitReport = () => {
                         <Bell className="w-5 h-5" />
                         <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
                     </button>
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
+                        CM
+                    </div>
                 </div>
             </header>
 
@@ -156,41 +174,24 @@ const SubmitReport = () => {
                                         type="text"
                                         required
                                         className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                                        placeholder="e.g., Potholes on Main Street"
+                                        placeholder="e.g., Deep Pothole on Main Street"
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
-                                        <select
-                                            name="category"
-                                            value={formData.category}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all appearance-none bg-white"
-                                        >
-                                            <option value="">Select Category</option>
-                                            <option value="Roads">Roads & Infrastructure</option>
-                                            <option value="Sanitation">Sanitation & Waste</option>
-                                            <option value="Water">Water Supply</option>
-                                            <option value="Electricity">Electricity</option>
-                                            <option value="Corruption">Bribery & Corruption</option>
-                                            <option value="Other">Other</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Location Description</label>
-                                        <input
-                                            name="location"
-                                            value={formData.location}
-                                            onChange={handleInputChange}
-                                            type="text"
-                                            required
-                                            className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                                            placeholder="e.g., Near City Hospital"
-                                        />
-                                    </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                                    <select
+                                        name="category"
+                                        value={formData.category}
+                                        onChange={handleInputChange}
+                                        required
+                                        className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all appearance-none bg-white"
+                                    >
+                                        <option value="">Select Category</option>
+                                        {categories.map(cat => (
+                                            <option key={cat.value} value={cat.value}>{cat.label}</option>
+                                        ))}
+                                    </select>
                                 </div>
 
                                 <div>
@@ -338,27 +339,6 @@ const SubmitReport = () => {
                     </form>
                 </div>
             </div>
-
-            {/* Success Modal */}
-            {showSuccess && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl animate-in zoom-in duration-300">
-                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <CheckCircle className="w-8 h-8 text-green-600" />
-                        </div>
-                        <h3 className="text-2xl font-bold text-slate-800 mb-2">Report Submitted!</h3>
-                        <p className="text-slate-500 mb-6">
-                            Your report ID is <span className="font-mono font-medium text-slate-800">#RPT-2023-8924</span>. You can track its status in the Reports tab.
-                        </p>
-                        <button
-                            onClick={() => navigate('/')}
-                            className="w-full bg-slate-900 text-white py-3 rounded-xl font-medium hover:bg-slate-800 transition-colors"
-                        >
-                            Return to Dashboard
-                        </button>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
