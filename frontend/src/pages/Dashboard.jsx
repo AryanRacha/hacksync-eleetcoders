@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { LayoutDashboard, Map as MapIcon, FileText, Mail, Search, Bell, Plus, Users, AlertTriangle, FileCheck, IndianRupee, Activity, Calendar, FileSearch } from 'lucide-react';
 import MapView from '../components/MapView';
-import { getUserReports } from '../api/reportApi';
+import axiosInstance from '../api/axiosInstance';
 
 // Internal Components
 const StatCard = ({ title, value, icon: Icon, color }) => (
@@ -38,32 +38,72 @@ const Dashboard = () => {
     const [activeCategory, setActiveCategory] = useState('All');
     const navigate = useNavigate();
 
-    const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || { role: 'guest' });
+    const [lastFetchCenter, setLastFetchCenter] = useState(null);
+    const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || { role: 'guest' }); // Basic guest default
 
-    useEffect(() => {
-        const fetchReports = async () => {
-            try {
-                setIsLoading(true);
-                const response = await getUserReports();
-                console.log("Fetched reports:", response.data);
-                setReports(response.data || []);
-            } catch (error) {
-                console.error("Error fetching user reports:", error);
-            } finally {
-                setIsLoading(false);
+    const filteredReports = activeCategory === 'All'
+        ? reports
+        : reports.filter(r => r.type.trim().toLowerCase() === activeCategory.trim().toLowerCase());
+
+    const fetchReports = useCallback(async (coords = null) => {
+        setIsLoading(true);
+        try {
+            const params = {};
+            if (coords) {
+                params.lat = coords.lat;
+                params.lng = coords.lng;
+                params.radius = 25;
+                setLastFetchCenter(coords);
             }
-        };
 
-        fetchReports();
+            const response = await axiosInstance.get('/geo/data', { params });
+            console.log("Data Debug: Raw geo data from backend:", response.data);
+
+            const features = response.data.features || [];
+            const transformedData = features
+                .filter(feature => feature.properties.type === 'Issue')
+                .map(feature => {
+                    const props = feature.properties;
+                    const geom = feature.geometry;
+
+                    if (!geom || !geom.coordinates) return null;
+
+                    let displayType = 'Unknown';
+                    const cat = props.category?.toLowerCase() || '';
+                    if (cat === 'pothole') displayType = 'Pothole';
+                    else if (cat === 'garbage') displayType = 'Unsanitary';
+                    else if (cat === 'water supply' || cat.includes('water')) displayType = 'Water Pipeline Leak';
+                    else displayType = props.category ? (props.category.charAt(0).toUpperCase() + props.category.slice(1)) : 'Unknown';
+
+                    const imageUrl = props.imageUrl || props.defaultImageUrl || props.image_url;
+                    const description = props.description || props.defaultDescription;
+
+                    return {
+                        id: props.id,
+                        type: displayType,
+                        location: [geom.coordinates[1], geom.coordinates[0]],
+                        status: props.audit?.status === 'Discrepancy' ? 'Rejected' : (props.audit?.status || 'Pending'),
+                        riskLevel: props.audit?.riskLevel || 'Low',
+                        imageUrl: imageUrl,
+                        description: description,
+                        date: props.createdAt ? new Date(props.createdAt).toISOString().split('T')[0] : 'Recently',
+                        createdAt: props.createdAt,
+                        category: props.category
+                    };
+                })
+                .filter(Boolean);
+
+            setReports(transformedData);
+        } catch (error) {
+            console.error("Error fetching geo data from backend:", error);
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
 
-    // Calculate Stats
-    const totalReports = reports.length;
-    const resolvedReports = reports.filter(r => r.status === 'Resolved').length;
-    const auditPending = reports.filter(r => r.auditVerification?.status === 'Pending').length;
-    // Assuming 'Active Corruption Alerts' logic or just hardcode/placeholder if not specified in prompt details
-    // For now keeping existing hardcoded value or making it 0 if not calculated
-    const corruptionAlerts = 0;
+    useEffect(() => {
+        fetchReports();
+    }, [fetchReports]);
 
     return (
         <div className="flex flex-col h-full overflow-hidden">
@@ -100,12 +140,32 @@ const Dashboard = () => {
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
-                {/* Top Row: Stats (Citizen Focused) */}
+                {/* Top Row: Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <StatCard title="My Reports Submitted" value={totalReports} icon={FileText} color="bg-blue-500" />
-                    <StatCard title="Reports Resolved" value={resolvedReports} icon={FileCheck} color="bg-green-500" />
-                    <StatCard title="Under AI Audit" value={auditPending} icon={Activity} color="bg-purple-500" />
-                    <StatCard title="Active Corruption Alerts" value={corruptionAlerts} icon={AlertTriangle} color="bg-red-500" />
+                    <StatCard
+                        title="Total Issues Logged"
+                        value={reports.length.toString()}
+                        icon={FileText}
+                        color="bg-blue-500"
+                    />
+                    <StatCard
+                        title="Issues Resolved"
+                        value={reports.filter(r => r.status === 'Resolved' || r.status === 'Verified').length.toString()}
+                        icon={FileCheck}
+                        color="bg-green-500"
+                    />
+                    <StatCard
+                        title="Under AI Audit"
+                        value={reports.filter(r => r.status === 'Pending').length.toString()}
+                        icon={Activity}
+                        color="bg-purple-500"
+                    />
+                    <StatCard
+                        title="High Risk Alerts"
+                        value={reports.filter(r => r.riskLevel === 'High' || r.riskLevel === 'Critical').length.toString()}
+                        icon={AlertTriangle}
+                        color="bg-red-500"
+                    />
                 </div>
 
                 {/* Middle Row: Map and Filters */}
@@ -113,7 +173,7 @@ const Dashboard = () => {
                     <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                         <h2 className="font-semibold text-slate-800">Geographic Distribution</h2>
                         <div className="flex gap-2">
-                            {['All', 'Roads', 'Sanitation', 'Education'].map(cat => (
+                            {['All', 'Pothole', 'Unsanitary', 'Water Pipeline Leak'].map(cat => (
                                 <button
                                     key={cat}
                                     onClick={() => setActiveCategory(cat)}
@@ -127,13 +187,20 @@ const Dashboard = () => {
                             ))}
                         </div>
                     </div>
-                    <div className="flex-1 relative bg-slate-50">
-                        {isLoading ? (
-                            <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="flex-1 relative bg-slate-50 overflow-hidden">
+                        <MapView reports={filteredReports} onMapMove={fetchReports} />
+
+                        {isLoading && reports.length === 0 && (
+                            <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-slate-50/80 backdrop-blur-sm">
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                             </div>
-                        ) : (
-                            <MapView reports={reports} />
+                        )}
+
+                        {isLoading && reports.length > 0 && (
+                            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-slate-200 flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                <span className="text-xs font-medium text-slate-600">Updating region...</span>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -155,7 +222,7 @@ const Dashboard = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {isLoading ? (
+                                {isLoading && reports.length === 0 ? (
                                     [1, 2, 3].map(i => (
                                         <tr key={i}>
                                             <td className="px-6 py-4"><div className="h-4 w-32 bg-slate-100 rounded animate-pulse"></div></td>
@@ -166,10 +233,10 @@ const Dashboard = () => {
                                         </tr>
                                     ))
                                 ) : (
-                                    reports.map((report) => (
-                                        <tr key={report._id} className="hover:bg-slate-50 transition-colors">
+                                    filteredReports.map((report) => (
+                                        <tr key={report.id} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-6 py-4">
-                                                <span className="font-medium text-slate-700 block truncate max-w-xs">{report.title}</span>
+                                                <span className="font-medium text-slate-700 block truncate max-w-xs">{report.type} at Location</span>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
@@ -179,7 +246,7 @@ const Dashboard = () => {
                                             <td className="px-6 py-4 text-sm text-slate-500">
                                                 <div className="flex items-center gap-2">
                                                     <Calendar size={14} />
-                                                    {new Date(report.createdAt).toLocaleDateString()}
+                                                    {report.createdAt ? new Date(report.createdAt).toLocaleDateString() : 'Recently'}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
@@ -187,7 +254,7 @@ const Dashboard = () => {
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <button
-                                                    onClick={() => navigate(`/audit/${report._id}`)}
+                                                    onClick={() => navigate(`/audit/${report.id}`)}
                                                     className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                                                 >
                                                     View Details
@@ -198,9 +265,9 @@ const Dashboard = () => {
                                 )}
                             </tbody>
                         </table>
-                        {!isLoading && reports.length === 0 && (
+                        {!isLoading && filteredReports.length === 0 && (
                             <div className="p-8 text-center text-slate-500 text-sm">
-                                No reports submitted yet.
+                                No reports found for this category.
                             </div>
                         )}
                     </div>
@@ -210,6 +277,7 @@ const Dashboard = () => {
         </div>
     );
 };
+
 
 
 export default Dashboard;

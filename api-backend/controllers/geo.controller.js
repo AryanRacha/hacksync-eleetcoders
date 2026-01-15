@@ -3,14 +3,24 @@ import OfficialRecord from "../models/OfficialRecord.js";
 
 export const getMapData = async (req, res) => {
     try {
-        const { category, status } = req.query;
+        const { category, status, lat, lng, radius } = req.query;
 
         let query = {};
         if (category) query.category = category;
         if (status) query.status = status;
 
-        const issues = await Issue.find(query).select("title category status location auditVerification");
-        const records = await OfficialRecord.find({}).select("projectName status location budget");
+        // Apply proximity filter if lat/lng are provided
+        if (lat && lng) {
+            const rad = radius ? parseFloat(radius) : 25; // Default 25km
+            query.location = {
+                $geoWithin: {
+                    $centerSphere: [[parseFloat(lng), parseFloat(lat)], rad / 6371] // Using 6371km as Earth's radius
+                }
+            };
+        }
+
+        const issues = await Issue.find(query).select("title category status location auditVerification defaultImageUrl defaultDescription");
+        const records = await OfficialRecord.find(lat && lng ? { location: query.location } : {}).select("projectName status location budget");
 
         // Format as GeoJSON FeatureCollection
         const features = [
@@ -23,7 +33,9 @@ export const getMapData = async (req, res) => {
                     title: issue.title,
                     category: issue.category,
                     status: issue.status,
-                    audit: issue.auditVerification
+                    audit: issue.auditVerification,
+                    imageUrl: issue.defaultImageUrl,
+                    description: issue.defaultDescription
                 }
             })),
             ...records.map(record => ({
