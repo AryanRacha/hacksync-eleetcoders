@@ -81,6 +81,5 @@ app.get("/*", (req, res) => {
 // Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  connectDB();
   console.log(`Backend Server is working on http://localhost:${PORT}`);
 });

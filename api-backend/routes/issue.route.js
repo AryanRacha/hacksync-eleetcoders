@@ -22,8 +22,8 @@ const upload = multer({ storage: multer.memoryStorage() });
 // --- Routes for All Logged-in Users ---
 
 router.post("/", protectRoute, upload.array("images"), createIssue);
-router.get("/", protectRoute, getAllIssues);
-router.get("/:id", protectRoute, getIssueById);
+router.get("/", getAllIssues);
+router.get("/:id", getIssueById);
 router.post("/:id/report", protectRoute, addReportToIssue);
 
 //This route when user clicks on follow button in trendings section
