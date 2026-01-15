@@ -11,11 +11,8 @@ import AuthPage from './pages/AuthPage';
 const MainLayout = () => {
   return (
     <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
-      {/* Sidebar stays fixed on the left */}
       <Sidebar />
-
-      {/* Main content area scrolls independently */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         <Outlet />
       </div>
     </div>
