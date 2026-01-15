@@ -1,5 +1,5 @@
 import Issue from "../models/issue.model.js";
-import OfficialRecord from "../models/OfficialRecord.js";
+import OfficialRecord from "../models/officialRecord.model.js";
 
 export const getMapData = async (req, res) => {
     try {

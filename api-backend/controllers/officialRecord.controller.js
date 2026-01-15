@@ -19,7 +19,6 @@ export const uploadContract = async (req, res) => {
         const recordData = analysis.data;
 
         // Save to OfficialRecord Collection
-        // Save to OfficialRecord Collection
         const newRecord = new OfficialRecord({
             projectName: recordData.projectName,
             department: recordData.department || "Public Works Department", // Default if missing
