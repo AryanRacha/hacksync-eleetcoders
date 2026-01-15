@@ -233,7 +233,7 @@ const Dashboard = () => {
                                         </tr>
                                     ))
                                 ) : (
-                                    filteredReports.map((report) => (
+                                    filteredReports.slice(0, 7).map((report) => (
                                         <tr key={report.id} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-6 py-4">
                                                 <span className="font-medium text-slate-700 block truncate max-w-xs">{report.type} at Location</span>

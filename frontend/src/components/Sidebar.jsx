@@ -22,8 +22,7 @@ const Sidebar = () => {
 
     // Helper for active link styles
     const getLinkClass = ({ isActive }) =>
-        `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-            isActive
+        `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
             ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
             : 'text-slate-400 hover:text-white hover:bg-slate-800'
         }`;
@@ -48,14 +47,9 @@ const Sidebar = () => {
                     <span className="font-medium">Submit Report</span>
                 </NavLink>
 
-                <NavLink to="/report" className={getLinkClass}>
+                <NavLink to="/reports" className={getLinkClass}>
                     <FileText size={20} />
                     <span className="font-medium">Reports</span>
-                </NavLink>
-
-                <NavLink to="/document-analysis" className={getLinkClass}>
-                    <FileSearch size={20} />
-                    <span className="font-medium">Doc Intelligence</span>
                 </NavLink>
 
                 {/* ✅ NEW: Direct Link to the Agentic Audit Feature */}
