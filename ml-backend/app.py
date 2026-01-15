@@ -50,4 +50,4 @@ def predict_image_url():
 if __name__ == '__main__':
     # To run this in a production-like environment, use a WSGI server like Gunicorn
     # For local development:
-    app.run(host='0.0.0.0', port=5000, debug=False, threaded=False)
+    app.run(host='0.0.0.0', port=4000, debug=False, threaded=False)
