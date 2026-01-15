@@ -44,6 +44,8 @@ const Dashboard = () => {
     const [activeCategory, setActiveCategory] = useState('All');
     const navigate = useNavigate();
 
+    const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || { role: 'guest' }); // Basic guest default
+
     useEffect(() => {
         // Mock API Call
         const fetchReports = async () => {
@@ -86,15 +88,18 @@ const Dashboard = () => {
                         <Bell className="w-5 h-5" />
                         <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
                     </button>
-                    <button
-                        onClick={() => navigate('/submit')}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Add Report
-                    </button>
+                    {user?.role === 'user' && ( // Only show if role is user
+                        <button
+                            onClick={() => navigate('/submit')}
+                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Add Report
+                        </button>
+                    )}
                 </div>
             </header>
+
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">

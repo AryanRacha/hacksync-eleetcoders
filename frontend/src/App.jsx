@@ -4,8 +4,8 @@ import SubmitReport from './pages/SubmitReport';
 import DocumentAnalysis from './pages/DocumentAnalysis';
 import AuditDetail from './pages/AuditDetail';
 import Sidebar from './components/Sidebar';
-
 import Reports from './pages/Reports';
+import AuthPage from './pages/AuthPage';
 
 // Layout wrapper to ensure Sidebar is present on all pages
 const MainLayout = () => {
@@ -23,6 +23,8 @@ function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/auth" element={<AuthPage />} />
+
         <Route element={<MainLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/submit" element={<SubmitReport />} />
@@ -37,5 +39,6 @@ function App() {
     </Router>
   );
 }
+
 
 export default App;
