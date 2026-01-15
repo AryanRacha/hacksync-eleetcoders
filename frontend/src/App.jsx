@@ -7,12 +7,15 @@ import Sidebar from './components/Sidebar';
 import Reports from './pages/Reports';
 import AuthPage from './pages/AuthPage';
 
-// Layout wrapper to ensure Sidebar is present on all pages
+// Layout: Sidebar on Left, Content on Right
 const MainLayout = () => {
   return (
-    <div className="flex h-screen bg-slate-50 font-sans">
+    <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
+      {/* Sidebar stays fixed on the left */}
       <Sidebar />
-      <div className="flex-1 overflow-hidden">
+
+      {/* Main content area scrolls independently */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
         <Outlet />
       </div>
     </div>
@@ -33,12 +36,10 @@ function App() {
           <Route path="/audit/:id" element={<AuditDetail />} />
         </Route>
 
-        {/* Redirect unknown routes to dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
 }
-
 
 export default App;
