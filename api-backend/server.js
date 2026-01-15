@@ -26,7 +26,7 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: ["https://hacksync-eleetcoders.vercel.app/"], // Frontend URL
+    origin: ["https://hacksync-eleetcoders.vercel.app", "http://localhost:5173"], // Frontend URL
     credentials: true,
   })
 );
