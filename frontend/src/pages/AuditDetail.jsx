@@ -23,12 +23,12 @@ const AuditDetail = () => {
         const checkAuditStatus = async () => {
             try {
                 // Adjust port if your backend runs on 5000 or 3000
-                const response = await axios.get(`http://localhost:5000/api/audit/${id}`);
+                const response = await axios.get(`https://hacksync-eleetcoders-uqag.vercel.app//api/audit/${id}`);
                 setAuditResult(response.data);
                 // Check if already escalated (in a real app, this would come from the backend response)
                 if (response.data.verdict === 'Critical' || response.data.verdict === 'High') {
-                     // For demo purposes, we don't persist escalation state in this mock,
-                     // but you would check response.data.isEscalated here.
+                    // For demo purposes, we don't persist escalation state in this mock,
+                    // but you would check response.data.isEscalated here.
                 }
                 setViewState('complete');
             } catch (error) {
@@ -63,7 +63,7 @@ const AuditDetail = () => {
             await new Promise(r => setTimeout(r, 1000));
 
             // --- REAL BACKEND CALL ---
-            const response = await axios.post(`http://localhost:5000/api/audit/${id}/analyze`);
+            const response = await axios.post(`https://hacksync-eleetcoders-uqag.vercel.app//api/audit/${id}/analyze`);
             setAuditResult(response.data);
 
             addLog("✔ Audit Saved & Verified.", "success");
@@ -83,7 +83,7 @@ const AuditDetail = () => {
         if (!auditResult) return;
 
         // In a real app, you would make a POST request here:
-        // await axios.post(`http://localhost:5000/api/audit/${id}/escalate`);
+        // await axios.post(`https://hacksync-eleetcoders-uqag.vercel.app//api/audit/${id}/escalate`);
 
         // Simulate API call
         const confirm = window.confirm("Are you sure you want to escalate this case to the Vigilance Department?");
@@ -157,13 +157,12 @@ const AuditDetail = () => {
                                 {logs.map((log, i) => (
                                     <div key={i} className="flex gap-4 animate-in fade-in slide-in-from-left-2 duration-200">
                                         <span className="text-slate-600 shrink-0 select-none">{log.time}</span>
-                                        <span className={`${
-                                            log.type === 'error' ? 'text-red-400 font-bold' :
+                                        <span className={`${log.type === 'error' ? 'text-red-400 font-bold' :
                                             log.type === 'success' ? 'text-emerald-400' :
-                                            log.type === 'warning' ? 'text-amber-400' :
-                                            log.type === 'action' ? 'text-blue-400' :
-                                            log.type === 'system' ? 'text-purple-400 font-bold' : 'text-slate-300'
-                                        }`}>
+                                                log.type === 'warning' ? 'text-amber-400' :
+                                                    log.type === 'action' ? 'text-blue-400' :
+                                                        log.type === 'system' ? 'text-purple-400 font-bold' : 'text-slate-300'
+                                            }`}>
                                             {log.type === 'action' && '> '} {log.message}
                                         </span>
                                     </div>
@@ -227,7 +226,7 @@ const AuditDetail = () => {
                                                     <div>
                                                         <span className="text-sm text-slate-500">Status</span>
                                                         <div className="font-bold text-green-600 flex items-center gap-2 mt-1">
-                                                            <CheckCircle2 size={16}/> {auditResult.officialRecord.status}
+                                                            <CheckCircle2 size={16} /> {auditResult.officialRecord.status}
                                                         </div>
                                                     </div>
                                                     <div>
@@ -278,27 +277,23 @@ const AuditDetail = () => {
                             {/* RIGHT COLUMN: Actions */}
                             <div className="space-y-6">
                                 {/* Risk Card */}
-                                <div className={`rounded-2xl p-8 text-center border transition-all duration-500 ${
-                                    isEscalated ? 'bg-red-100 border-red-200 ring-2 ring-red-400' :
+                                <div className={`rounded-2xl p-8 text-center border transition-all duration-500 ${isEscalated ? 'bg-red-100 border-red-200 ring-2 ring-red-400' :
                                     auditResult.verdict === 'Critical' || auditResult.verdict === 'High'
-                                    ? 'bg-red-50 border-red-100'
-                                    : 'bg-green-50 border-green-100'
-                                }`}>
-                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto ${
-                                        auditResult.verdict === 'Critical' || auditResult.verdict === 'High'
+                                        ? 'bg-red-50 border-red-100'
+                                        : 'bg-green-50 border-green-100'
+                                    }`}>
+                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto ${auditResult.verdict === 'Critical' || auditResult.verdict === 'High'
                                         ? 'bg-red-100 text-red-600'
                                         : 'bg-green-100 text-green-600'
-                                    }`}>
+                                        }`}>
                                         <ShieldAlert size={32} />
                                     </div>
-                                    <h3 className={`text-xl font-bold ${
-                                        auditResult.verdict === 'Critical' || auditResult.verdict === 'High' ? 'text-red-900' : 'text-green-900'
-                                    }`}>
+                                    <h3 className={`text-xl font-bold ${auditResult.verdict === 'Critical' || auditResult.verdict === 'High' ? 'text-red-900' : 'text-green-900'
+                                        }`}>
                                         {auditResult.verdict} Risk Detected
                                     </h3>
-                                    <p className={`text-sm mt-2 mb-6 ${
-                                        auditResult.verdict === 'Critical' || auditResult.verdict === 'High' ? 'text-red-700' : 'text-green-700'
-                                    }`}>
+                                    <p className={`text-sm mt-2 mb-6 ${auditResult.verdict === 'Critical' || auditResult.verdict === 'High' ? 'text-red-700' : 'text-green-700'
+                                        }`}>
                                         {auditResult.verdict === 'Critical' || auditResult.verdict === 'High'
                                             ? "Flagged for immediate manual review due to high discrepancy probability."
                                             : "No significant discrepancies found. Verification successful."}
@@ -308,11 +303,10 @@ const AuditDetail = () => {
                                         <button
                                             onClick={handleEscalate}
                                             disabled={isEscalated}
-                                            className={`w-full py-3 text-white rounded-xl font-bold shadow-sm transition-all flex items-center justify-center gap-2 ${
-                                                isEscalated
+                                            className={`w-full py-3 text-white rounded-xl font-bold shadow-sm transition-all flex items-center justify-center gap-2 ${isEscalated
                                                 ? 'bg-slate-400 cursor-not-allowed'
                                                 : 'bg-red-600 hover:bg-red-700 hover:shadow-md'
-                                            }`}
+                                                }`}
                                         >
                                             {isEscalated ? (
                                                 <>
