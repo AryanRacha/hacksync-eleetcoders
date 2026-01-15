@@ -23,7 +23,7 @@ const AuditDetail = () => {
         const checkAuditStatus = async () => {
             try {
                 // Adjust port if your backend runs on 5000 or 3000
-                const response = await axios.get(`https://hacksync-eleetcoders-uqag.vercel.app//api/audit/${id}`);
+                const response = await axios.get(`https://hacksync-eleetcoders-uqag.vercel.app/api/audit/${id}`);
                 setAuditResult(response.data);
                 // Check if already escalated (in a real app, this would come from the backend response)
                 if (response.data.verdict === 'Critical' || response.data.verdict === 'High') {
@@ -63,7 +63,7 @@ const AuditDetail = () => {
             await new Promise(r => setTimeout(r, 1000));
 
             // --- REAL BACKEND CALL ---
-            const response = await axios.post(`https://hacksync-eleetcoders-uqag.vercel.app//api/audit/${id}/analyze`);
+            const response = await axios.post(`https://hacksync-eleetcoders-uqag.vercel.app/api/audit/${id}/analyze`);
             setAuditResult(response.data);
 
             addLog("✔ Audit Saved & Verified.", "success");
@@ -83,7 +83,7 @@ const AuditDetail = () => {
         if (!auditResult) return;
 
         // In a real app, you would make a POST request here:
-        // await axios.post(`https://hacksync-eleetcoders-uqag.vercel.app//api/audit/${id}/escalate`);
+        // await axios.post(`https://hacksync-eleetcoders-uqag.vercel.app/api/audit/${id}/escalate`);
 
         // Simulate API call
         const confirm = window.confirm("Are you sure you want to escalate this case to the Vigilance Department?");
