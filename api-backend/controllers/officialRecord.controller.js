@@ -19,14 +19,26 @@ export const uploadContract = async (req, res) => {
         const recordData = analysis.data;
 
         // Save to OfficialRecord Collection
+        // Save to OfficialRecord Collection
         const newRecord = new OfficialRecord({
             projectName: recordData.projectName,
-            budget: recordData.budget,
-            contractor: recordData.contractor,
+            department: recordData.department || "Public Works Department", // Default if missing
+            description: `Contract for ${recordData.projectName}`,
+            budget: {
+                amount: typeof recordData.budget === 'object' ? recordData.budget.amount : parseFloat(recordData.budget?.replace(/[^0-9.]/g, '') || 0),
+                formatted: typeof recordData.budget === 'object' ? recordData.budget.formatted : recordData.budget
+            },
+            contractor: {
+                name: typeof recordData.contractor === 'object' ? recordData.contractor.name : recordData.contractor
+            },
+            status: recordData.status || "Planned",
             startDate: recordData.startDate,
             endDate: recordData.endDate,
-            location: recordData.location,
-            confidence: recordData.confidence
+            location: {
+                type: "Point",
+                coordinates: [72.8777, 19.076], // Default Mumbai coords as AI can't easily extract geo-coords from text without Geocoding API
+                address: recordData.location
+            }
         });
 
         await newRecord.save();

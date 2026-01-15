@@ -3,6 +3,7 @@ import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import multer from "multer"; // ✅ Added for file uploads
+import axios from "axios"; // ✅ Added for proxying to ml-backend
 import connectDB from "./config/db.js";
 import dotenv from "dotenv";
 
@@ -57,7 +58,6 @@ app.post("/api/analyze", upload.single("document"), async (req, res) => {
     res.status(500).json({ error: "Analysis failed" });
   }
 });
-// ----------------------------------------
 
 // Standard Routes
 app.get("/", (req, res) => {

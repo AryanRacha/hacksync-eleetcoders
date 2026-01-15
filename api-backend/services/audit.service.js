@@ -1,97 +1,92 @@
 import { generateAuditVerdict } from "./ai.service.js";
 import Audit from "../models/audit.model.js";
+import Report from "../models/report.model.js";
+import OfficialRecord from "../models/officialRecord.model.js";
+import axios from "axios";
 
-// 🏛️ 4 DIFFERENT SCENARIOS (Real-world Data)
-const DEPARTMENT_DATABASE = {
-  // 1. ROADS (Critical Discrepancy)
-  "RPT-2023-1": {
-    department: "Public Works Department (PWD)",
-    project: {
-      id: "INFRA-RD-882",
-      name: "Sector 4 Main Road Resurfacing",
-      contractor: "Vardhan Infratech Pvt Ltd.",
-      status: "Completed", // <--- LIE (User says delay/damage)
-      budget: "₹1,20,00,000",
-      deadline: "2023-10-01",
-    },
-    evidence: {
-      desc: "User photo shows large potholes and loose gravel. No tarmac visible.",
-      img: "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&q=80&w=800",
-    },
-  },
-  // 2. GARBAGE (Medium Risk - Service Failure)
-  "RPT-2023-2": {
-    department: "Dept of Sanitation & Waste",
-    project: {
-      id: "SANI-WZ-104",
-      name: "Municipal Waste Management - Zone 2",
-      contractor: "GreenClean Solutions",
-      status: "Active (Daily Pickup)",
-      budget: "₹45,00,000",
-      deadline: "2024-12-31",
-    },
-    evidence: {
-      desc: "Garbage overflowing from bins. Truck has not visited for 3 days.",
-      img: "https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&q=80&w=800",
-    },
-  },
-  // 3. STREET LIGHT (Low Risk - Maintenance Issue)
-  "RPT-2023-3": {
-    department: "Electricity Board (MSEDCL)",
-    project: {
-      id: "ELEC-SL-99",
-      name: "Smart City Lighting Phase 1",
-      contractor: "PowerGrid Corp",
-      status: "Maintenance Phase",
-      budget: "₹85,00,000",
-      deadline: "N/A",
-    },
-    evidence: {
-      desc: "Street light on Main St. is flickering. Likely bulb failure.",
-      img: "https://images.unsplash.com/photo-1555679427-1f6dfcce943b?auto=format&fit=crop&q=80&w=800",
-    },
-  },
-  // 4. WATER (High Risk - Leakage)
-  "RPT-2023-4": {
-    department: "Water Supply Department",
-    project: {
-      id: "WTR-PIPE-22",
-      name: "Main Pipeline Distribution - North",
-      contractor: "AquaFlow Systems",
-      status: "Recently Repaired",
-      budget: "₹12,00,000",
-      deadline: "2023-11-15",
-    },
-    evidence: {
-      desc: "Heavy leakage from main pipe. Thousands of liters wasting.",
-      img: "https://images.unsplash.com/photo-1523365280197-f1783db9fe62?auto=format&fit=crop&q=80&w=800",
-    },
-  },
-};
 
-const DEFAULT_RECORD = {
-  department: "General Municipal Admin",
-  project: {
-    id: "GEN-001",
-    name: "General City Maintenance",
-    contractor: "Municipal Corporation",
-    status: "Active",
-    budget: "₹10,00,000",
-    deadline: "2024-03-31",
-  },
-  evidence: {
-    desc: "General complaint regarding infrastructure.",
-    img: "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7",
-  },
-};
+
 
 export const performAgenticAudit = async (reportId) => {
   // 1. INTELLIGENT RETRIEVAL
-  const data = DEPARTMENT_DATABASE[reportId] || DEFAULT_RECORD;
+  // Try to find the Real Report in DB
+  const userReport = await Report.findById(reportId).populate("issue_id");
+
+  if (!userReport) {
+    throw new Error("Report not found");
+  }
+
+  // Construct the "Data Context" used for the audit
+  let data = null;
+
+  // REAL WORLD MODE: Fetch from OfficialRecord DB
+  const categoryMap = {
+    pothole: "Public Works",
+    road: "Public Works",
+    traffic: "Public Works",
+    garbage: "Sanitation",
+    "water supply": "Water Supply",
+    streetlight: "Electricity",
+  };
+
+  const searchTerm =
+    categoryMap[userReport.issue_id?.category] || "Public Works";
+
+  let officialDoc = await OfficialRecord.findOne({
+    department: { $regex: searchTerm, $options: "i" },
+  });
+
+
+  if (officialDoc) {
+    data = {
+      department: officialDoc.department,
+      project: {
+        name: officialDoc.projectName,
+        contractor: officialDoc.contractor?.name || "Unknown",
+        status: officialDoc.status,
+        budget: officialDoc.budget?.formatted || officialDoc.budget?.amount,
+        deadline: officialDoc.deadline || "N/A",
+      },
+      evidence: {
+        desc: userReport.description,
+        img: userReport.imageUrl,
+      },
+    };
+  }
+
+  if (!data) {
+    throw new Error("Official Data not available for audit");
+  }
+
+  // 1.5. COMPUTER VISION VERIFICATION
+  let mlVerification = null;
+  let cvLog = { message: "👁️ Engaging Computer Vision...", type: "action" };
+
+  try {
+    if (data.evidence.img) {
+      const mlRes = await axios.get("http://localhost:4000/predict", {
+        params: { img_url: data.evidence.img },
+      });
+      mlVerification = mlRes.data;
+      cvLog = {
+        message: `👁️ Computer Vision: Verified '${mlVerification.prediction}' (${(
+          mlVerification.probability * 100
+        ).toFixed(1)}%)`,
+        type: "success",
+      };
+    }
+  } catch (err) {
+    console.error("ML Verification Failed:", err.message);
+    cvLog = {
+      message: "👁️ Computer Vision: Service Unavailable (Skipping)",
+      type: "warning",
+    };
+  }
 
   // 2. AI AUDIT (Compare Record vs Evidence)
   const aiResult = await generateAuditVerdict(data.project, {
     description: data.evidence.desc,
+    mlVerification,
   });
 
   // 3. SAVE RESULT
@@ -116,7 +111,8 @@ export const performAgenticAudit = async (reportId) => {
         { message: "Initializing IntegrityAI Agent...", type: "system" },
         { message: `Routing to: ${data.department}...`, type: "action" },
         { message: `✔ Record Found: ${data.project.name}`, type: "success" },
-        { message: "👁️ Engaging Computer Vision...", type: "action" },
+
+        cvLog,
         {
           message: `⚠ AI VERDICT: ${aiResult.riskLevel} Risk Detected`,
           type: "warning",

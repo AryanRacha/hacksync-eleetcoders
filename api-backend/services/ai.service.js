@@ -20,7 +20,18 @@ export const analyzeDocument = async (fileBuffer, mimeType) => {
     const filePart = {
       inlineData: { data: fileBuffer.toString("base64"), mimeType: mimeType },
     };
-    const prompt = `Analyze this document. Extract strict JSON: { projectName, budget, contractor, startDate, endDate, location, confidence }. No markdown.`;
+    const prompt = `Analyze this document. Extract strict JSON with these fields:
+    - projectName
+    - department (e.g., "Public Works Department", "Sanitation")
+    - budget (amount, formatted)
+    - contractor (name)
+    - status (must be one of: "Planned", "In Progress", "Completed", "Stalled", "Active", "Maintenance Phase", "Recently Repaired")
+    - startDate
+    - endDate
+    - location (address)
+    - confidence (0-100)
+    
+    No markdown.`;
     const result = await model.generateContent([prompt, filePart]);
     const text = result.response
       .text()
@@ -29,18 +40,10 @@ export const analyzeDocument = async (fileBuffer, mimeType) => {
     return { success: true, data: JSON.parse(text) };
   } catch (error) {
     console.error("AI Document Error:", error.message);
-    // Fallback Mock Data
-    return {
-      success: false,
-      data: {
-        projectName: "Chandani Chowk Flyover (DEMO)",
-        budget: "₹85,50,00,000",
-        contractor: "Dilip Buildcon",
-        confidence: 98.5,
-      },
-    };
+    throw new Error(`AI Document Analysis Failed: ${error.message}`);
   }
 };
+
 
 // 2. Verdict Generation (For Agentic Audit) - NEW FUNCTION
 export const generateAuditVerdict = async (officialRecord, userEvidence) => {
@@ -53,11 +56,16 @@ export const generateAuditVerdict = async (officialRecord, userEvidence) => {
       OFFICIAL RECORD: ${JSON.stringify(officialRecord)}
       USER EVIDENCE: ${JSON.stringify(userEvidence)}
 
+      NOTE: If 'mlVerification' is present in USER EVIDENCE, it contains Computer Vision analysis.
+      - "prediction": what the CV model detected (e.g., 'pothole', 'garbage').
+      - "probability": confidence of the CV model.
+      Use this to validate the user's description. If CV confirms the issue (e.g. pothole), increase confidence and risk level accordingly.
+
       Output strict JSON only:
       {
         "riskLevel": "Low" | "Medium" | "High" | "Critical",
         "confidence": Number (0-100),
-        "reasoning": "A short, professional summary of the discrepancy or verification."
+        "reasoning": "A short, professional summary of the discrepancy or verification, explicitly mentioning if Computer Vision confirmed the issue."
       }
       Do not use markdown.
     `;
@@ -70,14 +78,9 @@ export const generateAuditVerdict = async (officialRecord, userEvidence) => {
     return JSON.parse(text);
   } catch (error) {
     console.error("AI Verdict Error:", error.message);
-    // Fallback Verdict if AI fails
-    return {
-      riskLevel: "Critical",
-      confidence: 95.5,
-      reasoning:
-        "AI Service Unreachable. Defaulting to Critical Risk due to reported structural damage in completed project zone.",
-    };
+    throw new Error(`AI Verdict Generation Failed: ${error.message}`);
   }
 };
+
 
 export default { analyzeDocument, generateAuditVerdict };
